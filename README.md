@@ -21,5 +21,5 @@ This project is not affiliated with or endorsed by ESPN or the NHL.
 
 # Work In Progress
 - Implement **Stats** and **Bio** section from the website 
-- Implement previous years (Not sure current data)
-- 
+- Implement previous years (Not sure current data) **DONE**
+
