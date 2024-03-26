@@ -47,32 +47,33 @@ class NHLTeam:
         return roster
 
 
-    def fetch_player_game_log(self, player_name, player_url):
+    def fetch_player_game_log(self, player_name, player_url, year):
         player_url = player_url.split('/')
         player_url.insert(player_url.index('player') + 1, 'gamelog')
-        player_url = '/'.join(player_url)
-
+        player_url = '/'.join(player_url) + f'/year/{year}'
+    
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
         r = requests.get(player_url, headers=headers)
         soup = BeautifulSoup(r.content, "html.parser")
-        Format = soup.find(class_="gamelog br-4 pa4 mb3 bg-clr-white")
         
+        Format = soup.find(class_="gamelog br-4 pa4 mb3 bg-clr-white")
         seasons = soup.find_all(class_='mb5')
         
         if not seasons[1:]:
             seasons = soup.find_all(class_='mb4')
         
         game_log = {}
-
+    
+    
         for season in seasons[1:]:  # Skip first season as it contains overall stats
+            x=2
+            Check={}
             games = season.find(class_='Table__TBODY')
-            try: #Website error, month not updated -_-
-                season_name = games.find(class_="totals_row fw-bold ttu Table__TR Table__TR--sm Table__even").find(class_="Table__TD").get_text()
-            except:
-                continue
+            season_name = games.find(class_="totals_row fw-bold ttu Table__TR Table__TR--sm Table__even").find(class_="Table__TD").get_text()
+    
             game_log[season_name] = {}
-
-            for game in games.children:
+    
+            for game in games.children: 
                 if game.name != 'tr':
                     continue
                 
@@ -91,17 +92,32 @@ class NHLTeam:
                         "Result": columns[2].get_text(),
                         "Games Started": columns[3].get_text(),
                         "Time on Ice per Game": columns[4].get_text(),
-                        "Wins": columns[5].get_text(),
-                        "Losses": columns[6].get_text(),
-                        "Ties": columns[7].get_text(),
-                        "Overtime Losses": columns[8].get_text(),
-                        "Goals Against": columns[9].get_text(),
-                        "Goals Against Average": columns[10].get_text(),
-                        "Shots Against": columns[11].get_text(),
-                        "Saves": columns[12].get_text(),
+                        "Wins": int(columns[5].get_text()),
+                        "Losses": int(columns[6].get_text()),
+                        "Ties": int(columns[7].get_text()),
+                        "Overtime Losses": int(columns[8].get_text()),
+                        "Goals Against": int(columns[9].get_text()),
+                        "Goals Against Average": columns[10].get_text(), 
+                        "Shots Against": int(columns[11].get_text()),
+                        "Saves": int(columns[12].get_text()),
                         "Save Percentage": columns[13].get_text(),
-                        "Shutouts": columns[14].get_text(),
+                        "Shutouts": int(columns[14].get_text()),
                     }
+                    
+                    Team_Name = columns[1].get_text().lstrip('@').lstrip('vs')
+                    if Team_Name in game_log[season_name]:
+                        
+                        if Team_Name in Check:
+                            Check[Team_Name] = x + 1
+                            game_log[season_name][f"{Team_Name}-{Check[Team_Name]}x"] = goalies_game_details
+                            x = 2
+                            
+                        game_log[season_name][f"{Team_Name}-{x}x"] = goalies_game_details 
+                        Check[Team_Name] = x
+                        x = 2 
+                    else:
+                        game_log[season_name][Team_Name] = goalies_game_details
+                        
                 else:
                     try:
                         columns[16]
@@ -127,9 +143,21 @@ class NHLTeam:
                         "Time on Ice Per Game": columns[15].get_text(),
                         "Time on Ice Prod": columns[16].get_text(),
                     }
-
-                    game_log[season_name][columns[1].get_text().lstrip('@').lstrip('vs')] = skaters_game_details
-
+                    
+                    Team_Name = columns[1].get_text().lstrip('@').lstrip('vs')
+                    if Team_Name in game_log[season_name]:
+                        
+                        if Team_Name in Check:
+                            Check[Team_Name] = x + 1
+                            game_log[season_name][f"{Team_Name}-{Check[Team_Name]}x"] = skaters_game_details
+                            x = 2
+                            
+                        game_log[season_name][f"{Team_Name}-{x}x"] = skaters_game_details 
+                        Check[Team_Name] = x
+                        x = 2 
+                    else:
+                        game_log[season_name][Team_Name] = skaters_game_details
+    
         return game_log
     
 
