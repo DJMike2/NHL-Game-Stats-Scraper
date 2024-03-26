@@ -29,17 +29,22 @@ class NHLTeam:
         }
 
         roster_section = soup.find(class_="Roster")
+        headline = roster_section.find(class_='headline headline__h1 dib').get_text().split()[-1].split('-')
+        Game_Years = [headline[0], f'20{headline[1]}']
+        
         for key, value in management_list.items():
             players_positions = roster_section.find(class_=key)
             players_list = players_positions.find_all(class_="Table__TR Table__TR--lg Table__even")
             position_roster = {}
+            
             for player_info in players_list:
                 player_name = player_info.find_all(class_="Table__TD")[1].a.get_text()
                 player_details = [player_info.find_all(class_="Table__TD")[1].a['href'],{
                     "Player Info": {
                         "Age": player_info.find_all(class_="Table__TD")[2].get_text()
                     },
-                    "Game Log": {},
+                    "Game Log": {Game_Years[0] : {},
+                                 Game_Years[1] : {}},
                     "Career": {}
                 }]
                 position_roster[player_name] = player_details
@@ -172,8 +177,9 @@ def main():
         team.fetch_roster()
         for position, players in team.roster.items():
             for player, details in players.items():
-                game_log = team.fetch_player_game_log(player, details[0])
-                team.roster[position][player][1]['Game Log'] = game_log
+                for year in details[1]['Game Log']:
+                    game_log = team.fetch_player_game_log(player, details[0], year)
+                    team.roster[position][player][1]['Game Log'][year] = game_log
                 
 
 
